@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>J.A.R.V.I.S. AI</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #030a12;
+    color: #00d9ff;
+    font-family: Arial, sans-serif;
+    min-height: 100vh;
+}
+
+header {
+    text-align: center;
+    padding: 22px;
+    border-bottom: 1px solid #07516c;
+}
+
+h1 {
+    letter-spacing: 7px;
+    text-shadow: 0 0 15px #00d9ff;
+}
+
+#clock {
+    font-size: 14px;
+    color: #8ceaff;
+}
+
+#net {
+    text-align: center;
+    margin: 18px;
+    color: #00ff99;
+}
+
+.reactor {
+    width: 155px;
+    height: 155px;
+    margin: 35px auto;
+    border: 5px solid #00d9ff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 25px #00d9ff,
+                inset 0 0 25px #00d9ff;
+    animation: glow 2s infinite alternate;
+}
+
+.core {
+    width: 75px;
+    height: 75px;
+    border-radius: 50%;
+    background: #00d9ff;
+    box-shadow: 0 0 35px #00d9ff;
+}
+
+@keyframes glow {
+    from { opacity: .6; }
+    to { opacity: 1; }
+}
+
+.info {
+    text-align: center;
+    line-height: 2;
+    font-size: 13px;
+}
+
+.chatbox {
+    width: 92%;
+    max-width: 750px;
+    margin: 25px auto;
+    padding: 15px;
+    background: #061522;
+    border: 1px solid #07516c;
+    border-radius: 12px;
+}
+
+#log {
+    height: 280px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.message {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 8px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    line-height: 1.5;
+}
+
+.user {
+    background: #10364b;
+    color: white;
+}
+
+.assistant {
+    background: #092635;
+    color: #00e5ff;
+}
+
+.input-area {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+input {
+    flex: 1;
+    min-width: 0;
+    padding: 13px;
+    background: #020b13;
+    color: white;
+    border: 1px solid #08718d;
+    border-radius: 7px;
+}
+
+button {
+    padding: 12px;
+    border: none;
+    border-radius: 7px;
+    background: #00bde8;
+    color: #00121a;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .5;
+}
+
+footer {
+    text-align: center;
+    padding: 20px;
+    color: #397f99;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>J.A.R.V.I.S.</h1>
+    <div>JUST A RATHER VERY INTELLIGENT SYSTEM</div>
+    <div id="clock">--:--:--</div>
+</header>
+
+<div id="net">CONNECTING TO SYSTEM...</div>
+
+<div class="reactor">
+    <div class="core"></div>
+</div>
+
+<div class="info">
+    <div>AI CORE: <span id="ai">INITIALIZING</span></div>
+    <div>NETWORK: <span id="network">CHECKING</span></div>
+    <div>VOICE: <span id="voiceState">READY</span></div>
+</div>
+
+<div class="chatbox">
+
+    <div id="log">
+        <div class="message assistant">
+            JARVIS: Good day. All systems are initializing.
+            How may I assist you?
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input
+            id="input"
+            type="text"
+            placeholder="Ask JARVIS anything..."
+        >
+
+        <button id="send">SEND</button>
+        <button id="mic">🎤</button>
+    </div>
+
+</div>
+
+<footer>
+    J.A.R.V.I.S. AI SYSTEM | PERSONAL AI INTERFACE
+</footer>
+
+<script>
+
+const log = document.getElementById("log");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const mic = document.getElementById("mic");
+
+let messages = [];
+
+function updateClock() {
+    document.getElementById("clock").textContent =
+        new Date().toLocaleTimeString();
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+function addMessage(text, type) {
+    const div = document.createElement("div");
+
+    div.className = "message " + type;
+
+    div.textContent =
+        (type === "user" ? "YOU: " : "JARVIS: ") + text;
+
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+}
+
+async function checkStatus() {
+    try {
+        const response = await fetch("/api/status");
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Server error");
+        }
+
+        document.getElementById("net").textContent =
+            "● SYSTEM ONLINE";
+
+        document.getElementById("network").textContent =
+            "CONNECTED";
+
+        document.getElementById("ai").textContent =
+            "READY";
+
+    } catch (error) {
+        document.getElementById("net").textContent =
+            "● SYSTEM OFFLINE";
+
+        document.getElementById("network").textContent =
+            "DISCONNECTED";
+
+        document.getElementById("ai").textContent =
+            "UNAVAILABLE";
+
+        console.error(error);
+    }
+}
+
+async function sendMessage() {
+    const text = input.value.trim();
+
+    if (!text || send.disabled) return;
+
+    input.value = "";
+
+    addMessage(text, "user");
+
+    messages.push({
+        role: "user",
+        content: text
+    });
+
+    send.disabled = true;
+
+    const waiting = document.createElement("div");
+    waiting.className = "message assistant";
+    waiting.textContent = "JARVIS: Processing...";
+
+    log.appendChild(waiting);
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                messages: messages
+            })
+        });
+
+        const raw = await response.text();
+
+        let data;
+
+        try {
+            data = JSON.parse(raw);
+        } catch {
+            throw new Error(
+                "Server returned an invalid response. Check deployment."
+            );
+        }
+
+        if (!response.ok) {
+            throw new Error(data.error || "Server error");
+        }
+
+        if (!data.reply) {
+            throw new Error("Empty AI response");
+        }
+
+        waiting.remove();
+
+        messages.push({
+            role: "assistant",
+            content: data.reply
+        });
+
+        addMessage(data.reply, "assistant");
+
+        speak(data.reply);
+
+    } catch (error) {
+        waiting.remove();
+        addMessage("ERROR: " + error.message, "assistant");
+        console.error(error);
+
+    } finally {
+        send.disabled = false;
+        input.focus();
+    }
+}
+
+send.addEventListener("click", sendMessage);
+
+input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+        sendMessage();
+    }
+});
+
+function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+
+    window.speechSynthesis.cancel();
+
+    const speech = new SpeechSynthesisUtterance(text);
+
+    speech.lang = "en-IN";
+    speech.rate = 1;
+    speech.pitch = 1;
+
+    window.speechSynthesis.speak(speech);
+}
+
+// Voice recognition
+const SpeechRecognition =
+    window.SpeechRecognition ||
+    window.webkitSpeechRecognition;
+
+if (SpeechRecognition) {
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = "en-IN";
+    recognition.interimResults = false;
+
+    mic.addEventListener("click", () => {
+        try {
+            recognition.start();
+
+            document.getElementById("voiceState").textContent =
+                "LISTENING";
+
+        } catch (error) {
+            console.error(error);
+        }
+    });
+
+    recognition.onresult = event => {
+        input.value = event.results[0][0].transcript;
+
+        document.getElementById("voiceState").textContent =
+            "READY";
+
+        sendMessage();
+    };
+
+    recognition.onerror = () => {
+        document.getElementById("voiceState").textContent =
+            "VOICE ERROR";
+    };
+
+    recognition.onend = () => {
+        document.getElementById("voiceState").textContent =
+            "READY";
+    };
+
+} else {
+    mic.disabled = true;
+
+    document.getElementById("voiceState").textContent =
+        "NOT SUPPORTED";
+}
+
+checkStatus();
+
+</script>
+
+</body>
+</html>
