@@ -16,4 +16,8 @@
   "engines": {
     "node": ">=18.0.0"
   }
+{
+  "message": "Hello Jarvis",
+  "history": []
 }
+
