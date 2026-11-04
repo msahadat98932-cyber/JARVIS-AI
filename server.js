@@ -9,6 +9,9 @@ app.use(express.json({ limit: "50kb" }));
 
 // Serve frontend
 app.use(express.static(path.join(__dirname, "public")));
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
 
 // Server status
 app.get("/api/status", (req, res) => {
