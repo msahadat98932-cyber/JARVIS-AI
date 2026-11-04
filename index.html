@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J.A.R.V.I.S. AI Assistant</title>
+    <style>
+        :root {
+            --bg-color: #030814;
+            --panel-bg: rgba(6, 20, 40, 0.75);
+            --neon-blue: #00f3ff;
+            --neon-glow: rgba(0, 243, 255, 0.4);
+            --neon-dim: rgba(0, 243, 255, 0.15);
+            --text-color: #d8f8ff;
+            --text-muted: #6294ab;
+            --user-msg: rgba(0, 100, 150, 0.4);
+            --jarvis-msg: rgba(0, 40, 80, 0.6);
+            --danger: #ff3366;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 30%, rgba(0, 150, 255, 0.1) 0%, transparent 70%),
+                linear-gradient(to bottom, #02050e, #051024);
+        }
+
+        /* Header Bar */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 15px var(--neon-glow);
+            z-index: 10;
+        }
+
+        .brand-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--neon-blue);
+            text-shadow: 0 0 8px var(--neon-blue);
+        }
+
+        .header-stats {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+            background-color: #555;
+            box-shadow: 0 0 5px #555;
+        }
+
+        .indicator.online { background-color: var(--neon-blue); box-shadow: 0 0 8px var(--neon-blue); }
+        .indicator.error { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+        /* Main Dashboard */
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 1000px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 15px;
+            gap: 15px;
+            overflow: hidden;
+        }
+
+        /* Animated Reactor Container */
+        .reactor-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 0;
+        }
+
+        .arc-reactor {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 2px dashed var(--neon-blue);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 0 20px var(--neon-glow), inset 0 0 15px var(--neon-glow);
+            animation: spin 12s linear infinite;
+        }
+
+        .arc-core {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #fff 0%, var(--neon-blue) 60%, transparent 100%);
+            box-shadow: 0 0 25px var(--neon-blue);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        .system-status-text {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--neon-blue);
+        }
+
+        /* Chat Area */
+        .chat-container {
+            flex: 1;
+            background: var(--panel-bg);
+            border: 1px solid var(--neon-dim);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 10px 14px;
+            border-radius: 6px;
+            line-height: 1.4;
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: var(--user-msg);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            border-bottom-right-radius: 0;
+        }
+
+        .message.jarvis {
+            align-self: flex-start;
+            background: var(--jarvis-msg);
+            border: 1px solid rgba(0, 243, 255, 0.5);
+            border-bottom-left-radius: 0;
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        /* Input Control Panel */
+        .chat-controls {
+            display: flex;
+            padding: 10px;
+            gap: 8px;
+            background: rgba(2, 10, 25, 0.9);
+            border-top: 1px solid var(--neon-dim);
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(0, 20, 40, 0.6);
+            border: 1px solid var(--neon-dim);
+            border-radius: 4px;
+            padding: 10px 14px;
+            color: #fff;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 8px var(--neon-glow);
+        }
+
+        button {
+            background: rgba(0, 243, 255, 0.15);
+            color: var(--neon-blue);
+            border: 1px solid var(--neon-blue);
+            padding: 10px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 12px var(--neon-blue);
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        @media (max-width: 600px) {
+            .brand-title { font-size: 1.1rem; }
+            .arc-reactor { width: 85px; height: 85px; }
+            .arc-core { width: 40px; height: 40px; }
+            .message { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-title">J.A.R.V.I.S.</div>
+        <div class="header-stats">
+            <div><span id="sys-indicator" class="indicator"></span><span id="sys-status">CONNECTING...</span></div>
+            <div id="digital-clock">00:00:00</div>
+        </div>
+    </header>
+
+    <main>
+        <div class="reactor-section">
+            <div class="arc-reactor">
+                <div class="arc-core"></div>
+            </div>
+            <div class="system-status-text" id="ai-indicator">CORE STANDBY</div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message jarvis">Greetings. I am J.A.R.V.I.S. Online and fully operational. How may I assist you today?</div>
+            </div>
+
+            <div class="chat-controls">
+                <input type="text" id="user-input" placeholder="Type command or query..." autocomplete="off">
+                <button id="mic-btn" title="Voice Input">🎤</button>
+                <button id="send-btn">SEND</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const micBtn = document.getElementById('mic-btn');
+        const sysIndicator = document.getElementById('sys-indicator');
+        const sysStatus = document.getElementById('sys-status');
+        const aiIndicator = document.getElementById('ai-indicator');
+        const digitalClock = document.getElementById('digital-clock');
+
+        let conversationHistory = [];
+
+        // Real-Time Digital Clock
+        function updateClock() {
+            const now = new Date();
+            digitalClock.innerText = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // System Backend Check
+        async function checkStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                
+                if (data.status === 'ONLINE') {
+                    sysIndicator.className = 'indicator online';
+                    if (data.aiConfigured) {
+                        sysStatus.innerText = 'ONLINE';
+                        aiIndicator.innerText = `CORE ACTIVE (${data.model})`;
+                    } else {
+                        sysStatus.innerText = 'NO API KEY';
+                        aiIndicator.innerText = 'CORE READY - MISSING API KEY';
+                    }
+                }
+            } catch (err) {
+                sysIndicator.className = 'indicator error';
+                sysStatus.innerText = 'OFFLINE';
+                aiIndicator.innerText = 'BACKEND OFFLINE';
+            }
+        }
+        checkStatus();
+        setInterval(checkStatus, 15000);
+
+        // Text-to-Speech Output
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.pitch = 1.0;
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Add Message to UI
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${role}`;
+            msgDiv.innerText = text;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Send Chat Request
+        async function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            appendMessage('user', text);
+            userInput.value = '';
+            sendBtn.disabled = true;
+            aiIndicator.innerText = 'PROCESSING...';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        history: conversationHistory
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    appendMessage('jarvis', data.reply);
+                    speak(data.reply);
+                    conversationHistory.push({ role: 'user', content: text });
+                    conversationHistory.push({ role: 'assistant', content: data.reply });
+                    if (conversationHistory.length > 10) conversationHistory = conversationHistory.slice(-10);
+                } else {
+                    appendMessage('jarvis', `[ERROR] ${data.message || 'System encountered an issue.'}`);
+                }
+            } catch (err) {
+                appendMessage('jarvis', '[ERROR] Failed to reach server core.');
+            } finally {
+                sendBtn.disabled = false;
+                aiIndicator.innerText = 'CORE ACTIVE';
+            }
+        }
+
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+
+        // Speech Recognition Setup
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+
+            micBtn.addEventListener('click', () => {
+                recognition.start();
+                aiIndicator.innerText = 'LISTENING...';
+            });
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                userInput.value = transcript;
+                handleSend();
+            };
+
+            recognition.onerror = () => {
+                aiIndicator.innerText = 'SPEECH ERROR';
+            };
+        } else {
+            micBtn.style.display = 'none';
+        }
+    </script>
+</body>
+</html>
